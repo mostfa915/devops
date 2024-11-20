@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest  # Utiliser l'image officielle MongoDB
+    container_name: mongodb
+    ports:
+      - "27017:27017"  # Exposer le port 27017 pour MongoDB
+    volumes:
+      - mongodb-data:/data/db  # Persister les données MongoDB
+    networks:
+      - app-network  # Réseau commun pour les services
+
+  express-app:
+    build:
+      context: ./server  # Répertoire contenant le Dockerfile de l'application Express
+      dockerfile: Dockerfile
+    container_name: express-app
+    ports:
+      - "9000:9000"  # Exposer le port 9000 de l'application Express
+    depends_on:
+      - mongodb  # Assurez-vous que MongoDB soit lancé avant l'app Express
+    networks:
+      - app-network
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/yourdbname  # Connexion à MongoDB dans le réseau Docker
+    command: ["npm", "start"]  # Démarrer l'app Express
+
+  react-app:
+    build:
+      context: ./client  # Répertoire contenant le Dockerfile de l'application React
+      dockerfile: Dockerfile
+    container_name: react-app
+    ports:
+      - "3000:3000"  # Exposer le port 3000 pour l'application React
+    networks:
+      - app-network
+    command: ["npm", "start"]  # Démarrer l'app React
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+    driver: local
